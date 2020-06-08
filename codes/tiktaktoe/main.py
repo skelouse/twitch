@@ -92,6 +92,13 @@ class TikApp(App):
                 self.win('X')
             elif y == 3:
                 self.win('Y')
+
+        blank = False
+        for i in s:
+            if i == '':
+                blank = True
+        if not blank:
+            self.win('Cat')
 # 0 1 2
 # 3 4 5
 # 6 7 8
