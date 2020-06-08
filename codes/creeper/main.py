@@ -10,11 +10,10 @@ if sysplatform == 'linux' or sysplatform == 'win32':
     Config.set('graphics', 'position', 'custom')
     Config.set('graphics', 'left', 0)
     Config.set('graphics', 'top', 0)
-    Config.set('graphics', 'borderless', 0)
-    # Config.set('graphics', 'height', 800)
-    # Config.set('graphics', 'width', 496)
-    Config.set('graphics', 'height', 420)
-    Config.set('graphics', 'width', 420)
+    Config.set('graphics', 'height', 800)
+    Config.set('graphics', 'width', 496)
+    #Config.set('graphics', 'height', 420)
+    #Config.set('graphics', 'width', 420)
     Config.write()
 
 

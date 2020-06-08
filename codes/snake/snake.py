@@ -17,6 +17,7 @@ class Food(Widget):
 
 
 class SnakeGame(Widget):
+    score = NumericProperty(0)
     food = []
     segments = []
     new_segments = []
@@ -39,15 +40,10 @@ class SnakeGame(Widget):
                 self.food.remove(f)
                 self.app.snake.eat()
 
-        # for s in self.segments:
-        #     if self.app.snake.collide_widget(s):
-        #         self.end_game()
         self.app.snake.move()
         for i in self.segments:
             i.move()
-            
-    def end_game(self):
-        print("GAME OVER B")
+
 
     def plant_food(self):
         x = random.randint(0, 800)
@@ -91,7 +87,8 @@ class PlayerSnake(Widget):
     def eat(self):
         # self.parent is game
         if not self.child:
-            #Make first child separate for collision
+            # Make first child separate for collision
+            self.parent.score += 1
             v = [element * 13 for element in self.velocity]
             x = self.pos[0] - v[0]
             y = self.pos[1] - v[1]
