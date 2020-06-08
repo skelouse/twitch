@@ -1,6 +1,7 @@
 from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.relativelayout import RelativeLayout
+from kivy.clock import Clock
 import random
 
 class ColorApp(App):
@@ -18,6 +19,7 @@ class ColorApp(App):
         )
         self.btn2.bind(on_press=self.change_color)
         self.layout.add_widget(self.btn2)
+        Clock.schedule_interval(self.change_color, 1)
         return self.layout
 
     def change_color(self, event):
