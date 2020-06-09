@@ -45,6 +45,8 @@ class TikApp(App):
             i.text = ''
             self.x_is_choose = 1
         self.layout.remove_widget(self.restartbtn)
+        for i in self.layout.children:
+            i.disabled = False
 
 
     def add_xy(self, event):
@@ -105,6 +107,8 @@ class TikApp(App):
 
     def win(self, letter):
         self.label.text = (letter+" wins!!!")
+        for i in self.layout.children:
+            i.disabled = True
         self.layout.add_widget(self.restartbtn)
 
 

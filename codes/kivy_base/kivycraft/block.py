@@ -6,6 +6,7 @@ from kivy.vector import Vector
 from kivy.properties import NumericProperty, ReferenceListProperty
 from kivy.lang.builder import Builder
 
+from functools import partial
 from sys import platform as sysplatform
 import random
 
@@ -47,18 +48,20 @@ class Player(Widget):
     velocity = ReferenceListProperty(velocity_x, velocity_y)
     def __init__(self, btype='dirt', **kwargs):
         super(Player, self).__init__(**kwargs)
-        self.size = (10, 30)
+        self.size = (5, 15)
     def move(self):
         self.pos = Vector(self.velocity) + self.pos
 
-    def walk(self, direction):
+    def walk(self, direction, *dt):
         if direction == 'right':
-            self.pos[0] += 5
+            self.step(1, 0)
         elif direction == 'left':
-            self.pos[0] -= 5
-        
+            self.step(-1, 0)
 
-
+    def step(self, x, y):
+        print("stepping", x, y)
+        self.pos[0] += x
+        self.pos[1] += y
 
 class Block(Widget):
     def __init__(self, btype='dirt', **kwargs):
@@ -77,12 +80,13 @@ class Game(Widget):
         Clock.schedule_interval(self.update, .01)
         self.generate()
         self.add_widget(self.player)
+        self.block_broken = False
 
     def update(self, dt):
         self.player.move()
         self.check_collision()
         
-    def check_collision(self):
+    def check_collision(self):        
         for i in self.blocks:
             if self.player.collide_widget(i):
                 print('collision')
@@ -99,6 +103,10 @@ class Game(Widget):
                     else:
                         self.player.pos[0] -= self.player.velocity_x
                         self.player.velocity_x = 0
+
+    def break_block(self, block, *dt):
+        self.blocks.remove(block)
+        self.remove_widget(block)
                     
 
 
@@ -125,35 +133,81 @@ class Game(Widget):
         self.blocks.append(b)
         self.add_widget(b)
 
+class TempWidget(Widget):
+    def __init__(self, **kwargs):
+        super(TempWidget, self).__init__(**kwargs)
+        self.size=(5, 1)
+
 class BlockBreak(App):
+    #walking_events = []
     def build(self):
         self.game = Game()
         return self.game
 
     def on_start(self):
-        from kivy.base import EventLoop
-        EventLoop.window.bind(on_keyboard=self.hook_keyboard)
+        from kivy.core.window import Window
+        self.block_broken = False
+        self._keyboard = Window.request_keyboard(
+            self._keyboard_closed, self, 'text')
+        self._keyboard.bind(on_key_down=self.on_keyboard_down)
+        self._keyboard.bind(on_key_up=self.on_keyboard_up)
+        self.walk_left_event = Clock.schedule_interval(partial(self.game.player.walk, 'left'), .01)
+        self.walk_right_event = Clock.schedule_interval(partial(self.game.player.walk, 'right'), .01)
+        self.walk_left_event.cancel()
+        self.walk_right_event.cancel()
 
-    def hook_keyboard(self, window, key, *largs):
-        if key == 276:
-            self.game.player.walk("left")
-        elif key == 273:
-            self.game.player.walk("up")
-        elif key == 275:
-            self.game.player.walk("right")
-        elif key == 274:
-            self.game.player.walk("down")
-        elif key == 119:
-            self.game.player.walk("up")
-        elif key == 97:
-            self.game.player.walk("left")
-        elif key == 115:
-            self.game.player.walk("down")
-        elif key == 100:
-            self.game.player.walk("right")
+    def _keyboard_closed(self, *args):
+        pass
+
+    def on_keyboard_down(self, keyboard, key, *largs):
+        print(key, 'down')
+        key = key[0]
+        if key == 276 or key == 97:
+            if not self.walk_left_event.is_triggered:
+                self.game.player.walk('left')
+            self.walk_left_event()
+        elif key == 273 or key == 119:
+            self.jump_event()
+        elif key == 275 or key == 100:
+            if not self.walk_right_event.is_triggered:
+                self.game.player.walk('right')
+            self.walk_right_event()
+        elif key == 274 or key == 115:
+            self.go_down_event()
         elif key == 27:
             self.stop()
         return True
+        
+    def jump_event(self):
+        self.game.player.pos[1] += 1
+
+    def go_down_event(self):
+        block_break_time = .5
+        # find a block below player
+        for block in self.game.blocks:
+            if TempWidget(pos=(self.game.player.pos[0], self.game.player.pos[1] - 1)).collide_widget(block) and not self.block_broken:
+                self.game.player.velocity_y = -1
+                self.game.break_block(block)
+                self.block_broken = True
+                Clock.schedule_once(self.finish_break, block_break_time)
+
+    def finish_break(self, dt):
+        self.block_broken = False
+        
+    def on_keyboard_up(self, keyboard, key, *largs):
+        key = key[0]
+        if key == 276 or key == 97:
+            self.walk_left_event.cancel()
+        elif key == 273 or key == 119:
+            self.jump_event()
+        elif key == 275 or key == 100:
+            self.walk_right_event.cancel()
+        elif key == 274 or key == 115:
+            self.go_down_event()
+        elif key == 27:
+            self.stop()
+        return True
+
 
 
 if __name__ == "__main__":
